@@ -4,6 +4,9 @@ import bcryptjs from "bcryptjs";
 import jsonWebToken from "jsonwebtoken";
 import dotenv from "dotenv";
 import authMiddleware from "../../middleware/auth-middleware.js";
+import { SendEmail } from "../../send-email.js";
+import crypto from "crypto";
+import PasswordReset from "../../schema/reset-password-schema.js";
 
 dotenv.config();
 
@@ -138,6 +141,73 @@ router.patch("/me/update", authMiddleware, async (req, res) => {
       success: false,
       message: "Internal Server Error",
     });
+  }
+});
+
+router.post("/request-password-reset", async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid request" });
+    }
+
+    const token = crypto.randomBytes(20).toString("hex");
+    const expiresAt = Date.now() + 1800000;
+
+    const link = `http://localhost:3000/auth/reset-password/${token}`;
+
+    await PasswordReset.create({ userId: user._id, token, expiresAt });
+
+    await SendEmail(user.email, link);
+
+    res.status(200).json({
+      success: true,
+      message: "Password reset link sent to your email.",
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+});
+
+router.post("/reset-password", async (req, res) => {
+  const { token, password } = req.body;
+  try {
+    const passwordReset = await PasswordReset.findOne({
+      token,
+      expiresAt: { $gt: Date.now() },
+    });
+
+    if (!passwordReset) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid Request." });
+    }
+
+    const user = await User.findById(passwordReset.userId);
+    if (!user) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid Request." });
+    }
+
+    const salt = await bcryptjs.genSalt(10);
+    const hashPassword = await bcryptjs.hash(password, salt);
+
+    user.password = hashPassword;
+
+    await user.save();
+
+    await PasswordReset.deleteOne({ _id: passwordReset._id });
+
+    res
+      .status(200)
+      .json({ success: true, message: "Password has been reset." });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 });
 
