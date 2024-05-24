@@ -116,7 +116,6 @@ router.patch("/me/update", authMiddleware, async (req, res) => {
   const { username, bio } = req.body;
   const user = await User.findById(userId);
   try {
-
     if (!user) {
       return res.status(400).json({
         success: false,
@@ -130,7 +129,7 @@ router.patch("/me/update", authMiddleware, async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: "Username updated successfully.",
+      message: "User information updated successfully.",
       user,
     });
   } catch (error) {

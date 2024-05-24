@@ -2,6 +2,7 @@ import express from "express";
 import upload from "../../middleware/multer.js";
 import cloudinary from "../../cloudinary.config.js";
 import authMiddleware from "../../middleware/auth-middleware.js";
+import User from "../../schema/user-schema.js";
 const router = express.Router();
 
 router.post(
@@ -19,7 +20,11 @@ router.post(
       }
 
       const userId = req.userId;
-      console.log("User ID from token:", userId);
+      const user = await User.findById(userId);
+
+      user.image = result.secure_url;
+
+      await user.save();
 
       res.status(200).json({
         success: true,
