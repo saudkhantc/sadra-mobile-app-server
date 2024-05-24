@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 import cors from "cors";
 import userRouter from "./routes/auth/user.routes.js";
 import uploadRouter from "./routes/auth/image.upload.routes.js";
+import routerError from "./routes/error/error.routes.js";
 
 dotenv.config();
 
@@ -15,9 +16,7 @@ app.use(express.json());
 app.use("/api/auth/", userRouter);
 app.use("/api/", uploadRouter);
 
-app.get("/", (req, res) => {
-  res.send("Hello World!");
-});
+app.use("/", routerError);
 
 app.listen(port, () => {
   console.log(`app listening on port ${port}`);
