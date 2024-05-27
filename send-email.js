@@ -1,23 +1,24 @@
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
+import dotenv from "dotenv";
+dotenv.config();
 
-const resend = new Resend("re_FThCdSTB_2vWTq1fGNHzHqZSzRpwUpJbw");
+const transporter = nodemailer.createTransport({
+  service: "Gmail",
+  host: "smtp.gmail.com",
+  port: 465,
+  secure: true,
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
 
-export async function SendEmail(email, link) {
-  const htmlContent = `
-      <div style="padding: 20px; text-align: center;">
-          <p style="font-size: 16px; line-height: 24px; color: #4b5563;">We received a request to reset your password. Click the button below to reset your password.</p>
-          <a href="${link}" style="display: inline-block; padding: 12px 24px; margin: 20px 0; background-color: #34d399; color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 16px; font-weight: 700;">Reset Password</a>
-      </div>
-    `;
-
-  const { data, error } = await resend.emails.send({
-    from: "Acme <onboarding@resend.dev>",
-    to: [email],
-    subject: "RESET PASSWORD",
-    html: htmlContent,
+export async function SendEmail(mailOptions) {
+  transporter.sendMail(mailOptions, (error, info) => {
+    if (error) {
+      console.error("Error sending email: ", error);
+    } else {
+      console.log("Email sent: ", info.response);
+    }
   });
-
-  if (error) {
-    return console.error({ error });
-  }
 }

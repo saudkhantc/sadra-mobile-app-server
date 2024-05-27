@@ -1,4 +1,4 @@
-import express from "express";
+import express, { text } from "express";
 import User from "../../schema/user-schema.js";
 import bcryptjs from "bcryptjs";
 import jsonWebToken from "jsonwebtoken";
@@ -73,7 +73,7 @@ router.post("/login", async (req, res) => {
       { userId: user._id },
       process.env.SECRET_AUTH,
       {
-        expiresIn: "1h",
+        expiresIn: "5m",
       }
     );
     user.token = token;
@@ -161,8 +161,20 @@ router.post("/request-password-reset", async (req, res) => {
     const link = `http://localhost:3000/auth/reset-password/${token}`;
 
     await PasswordReset.create({ userId: user._id, token, expiresAt });
+    const htmlContent = `
+    <div style="padding: 20px; text-align: center;">
+        <p style="font-size: 16px; line-height: 24px; color: #4b5563;">We received a request to reset your password. Click the button below to reset your password.</p>
+        <a href="${link}" style="display: inline-block; padding: 12px 24px; margin: 20px 0; background-color: #34d399; color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 16px; font-weight: 700;">Reset Password</a>
+    </div>
+  `;
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: "Reset Password",
+      html: htmlContent,
+    };
 
-    await SendEmail(user.email, link);
+    await SendEmail(mailOptions);
 
     res.status(200).json({
       success: true,

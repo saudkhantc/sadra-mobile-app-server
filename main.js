@@ -20,4 +20,5 @@ app.use("/", routerError);
 
 app.listen(port, () => {
   console.log(`app listening on port ${port}`);
+  // console.log(process.env.EMAIL_USER, process.env.EMAIL_PASS);
 });
